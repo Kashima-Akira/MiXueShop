@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.xzy.mapper.ProductMapper">
+
+    <sql id="selectClause">
+        id,name,descript,updated,level
+        FROM product
+    </sql>
+
+    <resultMap id="selectProductImage" type="map">
+        <id column="id" property="id"/>
+        <result column="path" property="path"/>
+    </resultMap>
+    <!--根据商品id查询商品图片-->
+    <select id="getProductImage" parameterType="Integer" resultMap="selectProductImage">
+        SELECT id,path
+        FROM product_image
+        WHERE product_id= #{id};
+    </select>
+
+    <resultMap id="selectPrice" type="map">
+        <id column="id" property="id"/>
+        <result column="price" property="price"/>
+    </resultMap>
+    <!--根据商品id查询商品列表-->
+    <select id="getPrice" parameterType="Integer" resultMap="selectPrice">
+        SELECT id,price
+        FROM price
+        WHERE product_id= #{id};
+    </select>
+
+    <resultMap id="selectProductList" type="map">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="descript" property="descript"/>
+        <result column="updated" property="updated"/>
+        <result column="level" property="level"/>
+        <collection  column="id" property="prices" select="getPrice"></collection>
+        <collection column="id" property="productImages" select="getProductImage"></collection>
+    </resultMap>
+    <!--根据分类id通过商品购买人数降序查询商品列表-->
+    <select id="getProductByBuyNumberDesc" parameterType="map" resultMap="selectProductList">
+        SELECT <include refid="selectClause"/>
+        WHERE category_id=#{categoryId}
+        ORDER BY buy_number DESC
+        limit #{pageNum},10;
+    </select>
+    <!--根据分类id通过商品总评分降序查询商品列表-->
+    <select id="getProductByLevelDesc" parameterType="map" resultMap="selectProductList">
+        SELECT <include refid="selectClause"/>
+        WHERE category_id=#{categoryId}
+        ORDER BY level DESC
+        limit #{pageNum},10;
+    </select>
+    <!--根据分类id通过商品更新时间降序查询商品列表-->
+    <select id="getProductByUpdatedDesc" parameterType="map" resultMap="selectProductList">
+        SELECT <include refid="selectClause"/>
+        WHERE category_id=#{categoryId}
+        ORDER BY updated DESC
+        limit #{pageNum},10;
+    </select>
+    <!--根据分类id通过商品上架时间降序查询商品列表-->
+    <select id="getProductByCreatedDesc" parameterType="map" resultMap="selectProductList">
+        SELECT <include refid="selectClause"/>
+        WHERE category_id=#{categoryId}
+        ORDER BY created DESC
+        limit #{pageNum},10;
+    </select>
+
+    <resultMap id="selectRecommendProductList" type="map">
+        <id column="id" property="id"/>
+        <collection column="id" property="productImages" select="getProductImage"></collection>
+    </resultMap>
+    <!--推荐商品(自动轮播图)-->
+    <select id="getRecommendProduct" parameterType="Integer" resultMap="selectRecommendProductList">
+        SELECT id
+        FROM product
+        ORDER BY updated DESC
+        limit #{pageNum},12;
+    </select>
+
+    <!--根据商品名模糊查询商品列表-->
+    <select id="getProductByProductName" parameterType="map" resultMap="selectSearchProduct">
+        SELECT id,name
+        FROM product
+        WHERE name LIKE '%${productName}%'
+        ORDER BY level DESC
+        limit #{pageNum},10;
+    </select>
+
+    <resultMap id="selectSearchProduct" type="map">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+    </resultMap>
+    <!--对所有商品通过销量进行降序排序-->
+    <select id="getHotSearchProduct" parameterType="Integer" resultMap="selectSearchProduct">
+        SELECT id,name
+        FROM product
+        ORDER BY buy_number DESC
+        limit #{pageNum},3;
+    </select>
+</mapper>

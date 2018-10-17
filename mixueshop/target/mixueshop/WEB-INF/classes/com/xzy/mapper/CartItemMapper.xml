@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xzy.mapper.CartItemMapper">
+
+
+
+
+
+    <insert id="insertCartItem" parameterType="com.xzy.pojo.CartItem">
+
+        <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+            select uuid()
+        </selectKey>
+        insert into
+        cart_item
+        (id,number,final_pay ,insert_time,price_id,product_id,state,user_id)
+        values
+        (#{id},#{number},#{finalPay},#{insertTime},#{priceId},#{productId},
+        #{state},#{userId})
+    </insert>
+
+
+    <delete id="deleteCartItem"  parameterType="Map">
+        delete from cart_item
+        where id =#{id}
+        <!--<foreach collection="list" open="(" separator="," close=")" item="id">
+            #{id}
+        </foreach>-->
+    </delete>
+
+    <update id="updateEachCartItemOFNumber" parameterType="Map">
+        update cart_item
+        set number =#{number} , final_pay=#{finalPay}
+        where id=#{id}
+    </update>
+
+    <resultMap id="AllCartItemMap" type="com.xzy.pojo.AllCartItem">
+        <collection property="cartItemList" column="id" select="selectEachCartItem"/>
+    </resultMap>
+
+    <select id="selectAllCartItem" resultMap="AllCartItemMap" parameterType="String">
+        select id from user where id=#{id};
+    </select>
+    <select id="selectEachCartItem" resultMap="CartItemMap" parameterType="String">
+        select
+        id,number,final_pay,insert_time,product_id,price_id
+
+        from cart_item  where
+        cart_item.user_id=#{id}
+        order by insert_time desc
+
+    </select>
+    <resultMap type="map" id="CartItemMap">
+        <id column="id" property="id" />
+        <result column="number" property="number" />
+        <result column="final_pay" property="finalPay" />
+        <result column="insert_time" property="insertTime" />
+        <!--<result column="state" property="state" />-->
+        <result column="price_id" property="priceId"/>
+        <result column="product_id" property="productId"/>
+        <association property="price" column="price_id" select="selectCartItemPrice"/>
+        <association property="product" column="product_id" select="selectCartItemProduct"></association>
+    </resultMap>
+
+    <select id="selectCartItemPrice" resultType="map" parameterType="int">
+        select price,name
+        from price where id=#{price_id}
+    </select>
+
+    <resultMap id="CartItemProductMap" type="map">
+        <id column="id" property="id" />
+        <result column="NAME" property="name" />
+        <result column="descript" property="descript" />
+        <result column="category_id" property="categoryId"/>
+        <association property="category" column="category_id" select="selectCartItemCategory"></association>
+        <collection property="productImages" column="id" select="selectCartItemProductImage" />
+    </resultMap>
+    <select id="selectCartItemProduct" parameterType="String" resultMap="CartItemProductMap">
+        select id,NAME,descript,category_id
+                from product
+                where id=#{id}
+    </select>
+    <select id="selectCartItemCategory" parameterType="int" resultType="map">
+        select id,name,descript
+        from category where id=#{category_id}
+    </select>
+    <select id="selectCartItemProductImage" parameterType="String" resultType="map">
+        select id,path
+        from product_image
+        where product_id=#{id}
+    </select>
+
+
+    <select id="selectCartItemOfUser" parameterType="com.xzy.pojo.CartItem" resultType="com.xzy.pojo.CartItem">
+        select  id,number,final_pay as finalPay, insert_time as insertTime ,price_id as priceId ,product_id as productId ,state ,user_id as userId
+        from  cart_item
+        where user_id=#{userId} and product_id=#{productId} and price_id=#{priceId}
+    </select>
+
+
+
+
+
+</mapper>

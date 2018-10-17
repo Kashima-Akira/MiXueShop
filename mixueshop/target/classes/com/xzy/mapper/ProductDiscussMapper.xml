@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzy.mapper.ProductDiscussMapper">
+
+    <!--//添加评论图片-->
+    <insert id="insertDiscussImage" parameterType="com.xzy.pojo.DiscussImage">
+        insert into discuss_image (id,path,product_discuss_id) values (#{id},#{path},#{productDiscussId})
+
+    </insert>
+
+    <!--//添加评论-->
+    <insert id="insertDiscuss" parameterType="com.xzy.pojo.ProductDiscuss">
+        <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+            select uuid()
+        </selectKey>
+        insert into product_discuss(id,descript,created,good,bad,state,product_id,user_id,orders_id)
+        values (#{id},#{descript},#{created},#{good},#{bad},#{state},#{productId},#{userId},#{ordersId})
+    </insert>
+
+
+
+    <!--根据订单id删除评论-->
+    <delete id="deleteDiscuss" parameterType="String">
+        DELETE FROM product_discuss
+        WHERE orders_id=#{id}
+    </delete>
+
+    <!--//查询评论条数-->
+    <select id="countDiscuss" parameterType="Integer" resultType="Integer">
+        select count(*) from product_discuss where product_id=#{productid}
+    </select>
+
+    <resultMap id="selectDiscussMap" type="map">
+        <id column="id" property="id"></id>
+        <result column="descript" property="descript"></result>
+        <result column="created" property="created"></result>
+        <result column="good" property="good"></result>
+        <result column="product_id" property="productId"></result>
+        <!--一条评论有多张图片-->
+        <collection property="discussImages" column="id" select="selectAllImages"></collection>
+    </resultMap>
+    <!--根据订单id查询用户的所有评论-->
+    <select id="selectByOrdersid" resultMap="selectDiscussMap" parameterType="String">
+        select id,descript,created,good,orders_id
+        from product_discuss
+        where orders_id=#{ordersId}
+        order by created desc
+    </select>
+
+    <!--根据商品id查询评论-->
+    <select id="selectByProductid" resultMap="selectDiscussMap" parameterType="map">
+            select id,descript,created,good,product_id
+            from product_discuss
+            where product_id=#{productid}
+            order by created desc
+            limit #{pageNum},10
+    </select>
+
+    <!--//查询评论图片-->
+    <resultMap id="ImageListsMap" type="map">
+        <id column="id" property="id"></id>
+        <result column="path" property="path"></result>
+        <result column="product_discuss_id" property="productDiscussId"></result>
+    </resultMap>
+
+    <select id="selectAllImages" resultMap="ImageListsMap" parameterType="String">
+        select id,path,product_discuss_id
+        from discuss_image
+        where product_discuss_id=#{id};
+    </select>
+
+    <!--//查询评论id-->
+    <select id="selectDiscussId" parameterType="Integer" resultType="String">
+        select id from product_discuss WHERE id=#{productid}
+    </select>
+
+    <!--//商品评分等级查询-->
+    <select id="selectLevel" parameterType="Integer" resultType="Double">
+        select avg(state) as level from product_discuss where product_id=#{productId}
+    </select>
+
+    <!--更新商品评分-->
+    <update id="updateProductLevel" parameterType="map">
+        update product set level=#{level}
+        where id=#{id}
+
+    </update>
+    <!--更新赞的数量-->
+    <update id="upadeaeGood" parameterType="com.xzy.pojo.ProductDiscuss">
+        update product_discuss set good=good+1
+        where id=#{productid}
+    </update>
+    <update id="upadatestate" parameterType="map">
+        UPDATE orders
+        inner join order_item ON order_item.orders_id=#{ordersId} and orders.id=#{ordersId}
+        SET orders.state=2,order_item.state=2
+        WHERE order_item.product_id=#{productId}
+
+    </update>
+
+<select id="selectPidByordersid" parameterType="String" resultType="Integer">
+    select product_id from order_item where orders_id=#{ordersid}
+</select>
+
+    <resultMap id="nameandimageMap" type="map">
+        <id column="id" property="id"></id>
+        <result column="name" property="name"></result>
+        <result column="insert_time" property="insertTime"></result>
+        <result column="state" property="state"></result>
+        <result column="path" property="path"></result>
+    </resultMap>
+
+    <select id="getpnameandimage" parameterType="map" resultMap="nameandimageMap">
+        select p.id,p.name,i.path,o.insert_time,o.state
+        from product p
+        left join product_image i on p.id=i.product_id
+        left join order_item o on p.id=o.product_id and o.orders_id=#{ordersid}
+        where p.id=#{id} limit 1
+
+    </select>
+
+</mapper>

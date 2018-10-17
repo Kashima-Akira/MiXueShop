@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.xzy.mapper.ProductShowMapper">
+
+    <!--根据商品id查询商品详细表-->
+    <resultMap id="product" type="com.xzy.pojo.Product">
+        <result column="pid" property="id"/>
+        <result column="pname" property="name"/>
+        <result column="pdescript" property="descript"/>
+        <result column="number" property="number"/>
+        <result column="is_Hot" property="isHot"/>
+        <result column="created" property="created"/>
+        <result column="updated" property="updated"/>
+        <result column="pstate" property="state"/>
+        <result column="level" property="level"/>
+        <association property="category" javaType="Category">
+            <result column="gid" property="id"/>
+            <result column="gname" property="name"/>
+            <result column="gdescript" property="descript"/>
+            <result column="state" property="state"/>
+        </association>
+        <collection property="prices" ofType="Price">
+            <id column="rid" property="id"/>
+            <result column="price" property="price"/>
+            <result column="rname" property="name"/>
+            <result column="rdescript" property="descript"/>
+            <result column="image" property="image"/>
+            <result column="rstate" property="state"/>
+        </collection>
+        <collection property="productImages" ofType="ProductImage">
+            <id column="iid" property="id"/>
+            <result column="path" property="path"/>
+            <result column="idescript" property="descript"/>
+            <result column="istate" property="state"/>
+        </collection>
+    </resultMap>
+    <select id="selectProductDatailById" parameterType="Integer" resultMap="product">
+        SELECT p.id AS pid,p.name AS pname,p.descript AS pdescript,p.number,p.is_hot,p.created,p.updated,p.state AS pstate,p.level,
+        g.id AS gid,g.name AS gname,g.descript AS gdescript,g.state,
+        r.id AS rid,r.price,r.name AS rname,r.descript AS rdescript,r.image,r.state AS rstate,
+        i.id AS iid,i.path,i.descript AS idescript,i.state AS istate
+        FROM product p
+        LEFT JOIN category g ON(p.`category_id`=g.`id`)
+        LEFT JOIN price r ON(r.product_id=p.id)
+        LEFT JOIN product_image i ON(p.id=i.product_id)
+	    WHERE p.id=#{v};
+    </select>
+
+    <!--根据商品id查询用户浏览记录表-->
+    <resultMap id="userHistory" type="UserHistory">
+        <result column="id" property="id"/>
+        <result column="time" property="time"/>
+        <result column="number" property="number"/>
+        <result column="state" property="state"/>
+        <result column="user_id" property="userId"/>
+        <result column="product_id" property="productId"/>
+    </resultMap>
+    <select id="selectHistoryByUserId" parameterType="String" resultMap="userHistory">
+        SELECT * FROM user_history WHERE user_id=#{id} order by time desc
+    </select>
+    <!--根据用户id和商品id查询浏览记录-->
+    <select id="selectHistoryByUserIdAndProductId" parameterType="UserHistory" resultMap="userHistory">
+        SELECT * FROM user_history WHERE user_id=#{userId} AND product_id=#{productId}
+    </select>
+    <!--更新用户历史记录表-->
+    <update id="updateHistory" parameterType="UserHistory">
+        UPDATE user_history SET time=#{time},number=#{number} WHERE user_id=#{userId} AND product_id=#{productId}
+    </update>
+    <!--将商品插入浏览历史表-->
+    <insert id="insertHistory" parameterType="UserHistory">
+        INSERT INTO user_history (id,time,number,state,user_id,product_id) VALUES (#{id},#{time},#{number},#{state},#{userId},#{productId})
+    </insert>
+
+    <delete id="deleteHistory" parameterType="Integer">
+        delete from user_history where product_id=#{productId}
+    </delete>
+    <select id="selectstar" parameterType="Integer" resultType="Integer">
+        select product_id from collect where product_id=#{productId} limit 1
+    </select>
+</mapper>

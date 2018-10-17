@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzy.mapper.ActivityMapper">
+    <insert id="insertActivity" parameterType="com.xzy.pojo.Activity">
+        INSERT INTO activity(id,NAME,descript,created)
+        VALUES(#{id},#{name},#{descript},#{created})
+    </insert>
+    <select id="selectActivity" parameterType="Integer" resultType="com.xzy.pojo.Activity">
+        select * from activity where id=#{id}
+    </select>
+</mapper>

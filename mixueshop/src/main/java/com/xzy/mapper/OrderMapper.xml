@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzy.mapper.OrderMapper">
+    <select id="getCartItemsByIds" resultType="com.xzy.pojo.CartItem" parameterType="QueryOrder">
+        SELECT
+        id,number,final_pay as finalPay,insert_time as insertTime,
+        price_id as priceId,product_id as productId,state,user_id as userId
+        FROM cart_item
+        WHERE id IN
+        <foreach collection="cartItemIds" open="(" close=")" item="id" separator=",">
+          #{id}
+        </foreach>
+    </select>
+    <delete id="delCartItemByIds" parameterType="String">
+        DELETE FROM cart_item
+        WHERE id=#{id}
+    </delete>
+    <select id="getSubmitAddressById" resultType="com.xzy.pojo.SubmitAddress" parameterType="com.xzy.pojo.QueryOrder">
+        SELECT
+        id,province,city,district,street,post,address,name,telephone,state,user_id as userId
+         FROM WHERE id=#{submitAddressId}
+    </select>
+    <insert id="insertOrderItem" parameterType="com.xzy.pojo.OrderItem">
+        INSERT INTO order_item
+        (id,number,insert_time,state,price_id,final_pay,product_id,orders_id,user_id) VALUES
+        (#{id},#{number},#{insertTime},#{state},#{priceId},#{finalPay},#{productId},#{ordersId},#{userId});
+    </insert>
+    <insert id="insertOrders" parameterType="com.xzy.pojo.Orders">
+        INSERT into orders
+        (id,descript,total,final_pay,submit_address_id,order_time,state,user_id) VALUES
+        (#{id},#{descript},#{total},#{finalPay},#{submitAddressId},#{orderTime},#{state},#{userId});
+    </insert>
+    <resultMap id="getOrdersByIdMap" type="com.xzy.pojo.Orders">
+        <id column="id" property="id"></id>
+        <result column="descript" property="descript"></result>
+        <result column="total" property="total"></result>
+        <result column="final_pay" property="finalPay"></result>
+        <result column="submit_address_id" property="submitAddressId"></result>
+        <result column="order_time" property="orderTime"></result>
+        <result column="o_state" property="state"></result>
+        <result column="user_id" property="userId"></result>
+        <association property="submitAddress" javaType="com.xzy.pojo.SubmitAddress">
+            <id column="submit_address_id" property="id"></id>
+            <result column="province" property="province"></result>
+            <result column="city" property="city"></result>
+            <result column="district" property="district"></result>
+            <result column="street" property="street"></result>
+            <result column="post" property="post"></result>
+            <result column="address" property="address"></result>
+            <result column="name" property="name"></result>
+            <result column="telephone" property="telephone"></result>
+            <result column="user_id" property="userId"></result>
+            <result column="s_state" property="state"></result>
+        </association>
+        <collection property="orderItems" ofType="com.xzy.pojo.OrderItem">
+            <id column="cid" property="id"></id>
+            <result column="number" property="number"></result>
+            <result column="insert_time" property="insertTime"></result>
+            <result column="state" property="state"></result>
+            <result column="price_id" property="priceId"></result>
+            <result column="final_pay" property="finalPay"></result>
+            <result column="product_id" property="productId"></result>
+            <result column="orders_id" property="ordersId"></result>
+        </collection>
+    </resultMap>
+    <select id="getOrdersById" parameterType="String" resultMap="getOrdersByIdMap">
+        SELECT o.id,o.descript,o.total,o.final_pay,o.submit_address_id,
+        o.order_time,o.state AS o_state,o.user_id,s.province,s.city,
+        s.district,s.street,s.post,s.address,s.name,s.telephone,s.user_id,
+        s.state AS s_state,c.id AS cid,c.number,c.insert_time,c.state,c.price_id,
+        c.final_pay,c.product_id,c.orders_id
+        FROM orders o
+        LEFT JOIN submit_address s ON  o.submit_address_id=s.id
+        LEFT JOIN order_item c ON c.orders_id=o.id
+        WHERE o.id=#{id}
+    </select>
+
+
+    <resultMap id="getOrdersPartByIdMap" type="com.xzy.pojo.Orders">
+        <result column="id" property="id"/>
+        <result column="descript" property="descript"></result>
+        <result column="total" property="total"></result>
+        <result column="final_pay" property="finalPay"></result>
+        <result column="submit_address_id" property="submitAddressId"></result>
+        <result column="order_time" property="orderTime"></result>
+        <result column="o_state" property="state"></result>
+        <result column="user_id" property="userId"></result>
+        <collection property="orderItems" ofType="com.xzy.pojo.OrderItem">
+            <id column="cid" property="id"></id>
+            <result column="number" property="number"></result>
+            <result column="insert_time" property="insertTime"></result>
+            <result column="state" property="state"></result>
+            <result column="price_id" property="priceId"></result>
+            <result column="final_pay" property="finalPay"></result>
+            <result column="product_id" property="productId"></result>
+            <result column="orders_id" property="ordersId"></result>
+        </collection>
+    </resultMap>
+    <select id="getOrdersPartById" parameterType="String" resultMap="getOrdersPartByIdMap">
+        SELECT o.id,o.descript,o.total,o.final_pay,o.submit_address_id,
+        o.order_time,o.state AS o_state,o.user_id,
+        c.id AS cid,c.number,c.insert_time,c.state,c.price_id,
+        c.final_pay,c.product_id,c.orders_id
+        FROM orders o LEFT JOIN order_item c ON c.orders_id=o.id
+        WHERE o.id=#{id};
+    </select>
+    <!--
+     queryOrder.setUser(user);
+        queryOrder.setState(itemState);
+        queryOrder.setIndexPage(indexPage);
+        queryOrder.setPageNum(pageSize);
+        List<OrderItem> orderItems = orderService.getOrderItemsByState(queryOrder);
+    -->
+    <select id="getOrderItemByState" parameterType="com.xzy.pojo.QueryOrder" resultType="com.xzy.pojo.OrderItem">
+
+    SELECT
+    id,number,insert_time AS insertTime,state,price_id AS priceId,
+    final_pay AS finalPay,product_id AS productId,orders_id AS ordersId,user_id AS userId
+    FROM order_item
+    WHERE user_id=#{user.id} AND state=#{state} ORDER BY insert_time DESC limit #{indexPage},#{pageNum};
+</select>
+    <select id="getOrderItemByStateCount" parameterType="com.xzy.pojo.QueryOrder" resultType="Long">
+
+        SELECT
+        count(*)
+        FROM order_item
+        WHERE user_id=#{user.id} AND state=#{state};
+    </select>
+    <update id="updateOrdersState" parameterType="com.xzy.pojo.Orders">
+        UPDATE orders SET state=#{state} WHERE id=#{id};
+    </update>
+    <update id="updateUserLevel" parameterType="com.xzy.pojo.QueryOrder">
+        UPDATE user SET level=level+#{level} WHERE id=#{user.id};
+    </update>
+    <select id="getFinalPayByOrderId" resultType="java.math.BigDecimal" parameterType="String">
+        select final_pay from orders where id=#{id};
+    </select>
+    <select id="getOrdersIdByUserIdCount" parameterType="String" resultType="Long">
+        select count(*) from orders where user_id=#{userId};
+    </select>
+
+
+
+    <resultMap id="getOrdersPartByIdMap2" type="com.xzy.pojo.Orders">
+        <result column="id" property="id"/>
+        <result column="descript" property="descript"></result>
+        <result column="total" property="total"></result>
+        <result column="final_pay" property="finalPay"></result>
+        <result column="submit_address_id" property="submitAddressId"></result>
+        <result column="order_time" property="orderTime"></result>
+        <result column="o_state" property="state"></result>
+        <result column="user_id" property="userId"></result>
+        <collection property="orderItems" ofType="com.xzy.pojo.OrderItem">
+            <id column="cid" property="id"></id>
+            <result column="number" property="number"></result>
+            <result column="insert_time" property="insertTime"></result>
+            <result column="state" property="state"></result>
+            <result column="price_id" property="priceId"></result>
+            <result column="final_pay" property="finalPay"></result>
+            <result column="product_id" property="productId"></result>
+            <result column="orders_id" property="ordersId"></result>
+        </collection>
+    </resultMap>
+
+    <select id="getOrdersIdListByState" parameterType="QueryOrder" resultMap="getOrdersPartByIdMap2">
+        SELECT o.id,o.descript,o.total,o.final_pay,o.submit_address_id,
+        o.order_time,o.state AS o_state,o.user_id as ouid,
+        c.id AS cid,c.number,c.insert_time,c.state,c.price_id,
+        c.final_pay,c.product_id,c.orders_id
+        FROM orders o LEFT JOIN order_item c ON c.orders_id=o.id
+        WHERE o.user_id=#{user.id}
+         <if test="state!=null">
+             AND o.state=#{state}
+         </if>
+         ORDER BY o.order_time DESC LIMIT #{indexPage},#{pageNum};
+</select>
+
+    <select id="getOrdersByStateCount" parameterType="com.xzy.pojo.QueryOrder" resultType="Long">
+        select count(*) from
+         orders WHERE state=#{state} and user_id=#{user.id};
+    </select>
+
+    <delete id="delOrders" parameterType="String">
+        DELETE FROM orders WHERE id=#{id}
+    </delete>
+    <delete id="delOrderItemByOrderId" parameterType="String">
+        DELETE FROM order_item WHERE orders_id=#{id}
+    </delete>
+    <update id="updateProductNumber" parameterType="map">
+        UPDATE product SET buy_number=buy_number+1,number=number-#{number} WHERE id=#{productId};
+    </update>
+
+    <insert id="insertAddress" parameterType="com.xzy.pojo.SubmitAddress">
+        INSERT INTO submit_address (id,province,city,district,street,post,address,name,telephone,state,user_id) VALUES
+        (#{id},#{province},#{city},#{district},#{street},#{post},#{address},#{name},#{telephone},#{state},#{userId});
+    </insert>
+
+    <select id="getAddress" resultType="com.xzy.pojo.SubmitAddress" parameterType="com.xzy.pojo.QueryOrder">
+        SELECT id,province,city,district,street,post,address,name,telephone,state,user_id AS userId
+        FROM submit_address WHERE user_id=#{user.id} AND state in(1,2) ORDER BY id DESC limit #{indexPage},#{pageNum}  ;
+    </select>
+
+    <update id="updateAddress" parameterType="com.xzy.pojo.SubmitAddress">
+        UPDATE submit_address SET
+         province=#{province},city=#{city},district=#{district},street=#{street},
+         post=#{post},address=#{address},name=#{name},telephone=#{telephone}
+         WHERE id=#{id} AND user_id=#{userId};
+    </update>
+
+    <select id="getAddressCount" resultType="Long" parameterType="String">
+        SELECT count(*)
+        FROM submit_address WHERE user_id=#{uid} ;
+    </select>
+    <update id="updateAddressById" parameterType="com.xzy.pojo.SubmitAddress">
+        UPDATE submit_address SET state=#{state} WHERE id=#{id} AND user_id=#{userId};
+    </update>
+    <delete id="deleteAddressById" parameterType="com.xzy.pojo.SubmitAddress">
+        DELETE FROM submit_address WHERE id=#{id} AND user_id=#{userId}
+    </delete>
+    <select id="getPrice" parameterType="Integer" resultType="com.xzy.pojo.Price">
+        select id,price,name,descript,image,state,product_id AS productId from price WHERE id=#{priceId};
+    </select>
+</mapper>

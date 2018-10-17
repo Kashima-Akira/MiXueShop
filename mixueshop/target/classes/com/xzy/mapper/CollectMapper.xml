@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzy.mapper.CollectMapper">
+
+    <!--通过商品id删除收藏-->
+    <delete id="deleteByPproductId" parameterType="Integer">
+        DELETE FROM collect
+        WHERE product_id=#{id,jdbcType=INTEGER}
+    </delete>
+
+    <!--插入一条收藏-->
+    <insert id="insert" parameterType="com.xzy.pojo.Collect">
+        <selectKey keyProperty="id" resultType="java.lang.String" order="BEFORE">
+            select uuid()
+        </selectKey>
+        insert into collect (id, descript, collect_time,
+        state, user_id, product_id
+        )
+        values (#{id,jdbcType=VARCHAR}, #{descript,jdbcType=VARCHAR}, #{collectTime,jdbcType=TIMESTAMP},
+        #{state,jdbcType=INTEGER}, #{userId,jdbcType=VARCHAR}, #{productId,jdbcType=INTEGER}
+        )
+    </insert>
+
+    <resultMap id="selectProductMap" type="map">
+
+        <id property="id" column="id"></id>
+        <result property="name" column="name"></result>
+        <result property="descript" column="descript"></result>
+
+        <result property="state" column="state"></result>
+        <result property="productId" column="product_id"></result>
+        <result property="level" column="level"></result>
+        <collection property="prices" column="id" select="selectProductPrice"></collection>
+    </resultMap>
+
+    <resultMap id="ProductPriceMap" type="map">
+        <id property="id" column="id"></id>
+        <result property="price" column="price"></result>
+        <result property="image" column="image"></result>
+
+        <result property="price" column="price"></result>
+    </resultMap>
+    <select id="selectProductPrice" resultMap="ProductPriceMap" parameterType="String">
+        select id,price,image
+        from price
+        where product_id=#{id}
+    </select>
+
+    <resultMap id="selectCollectMap" type="map">
+        <id property="id" column="id"></id>
+        <result property="productId" column="product_id"></result>
+        <association property="product" column="product_id" select="selectProdcut"></association>
+    </resultMap>
+    <!--通过用户id查询所有收藏的商品有哪些-->
+
+    <select id="selectAllById" resultMap="selectCollectMap" parameterType="String">
+        SELECT id,product_id,collect_time
+        from collect
+        where user_id=#{userid}
+        order by collect_time desc
+    </select>
+
+    <select id="selectProdcut" resultMap="selectProductMap" parameterType="Integer">
+        select id,name,descript,state,level
+        from product
+        where id=#{productid}
+    </select>
+
+    <select id="selectIds" parameterType="Integer" resultType="Integer">
+        SELECT product_id from collect  where product_id=#{id} limit 1
+    </select>
+
+
+</mapper>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzy.mapper.CategoryListMapper">
+
+
+
+
+    <resultMap id="categoryResult" type="map">
+        <id column="id" property="id"/>
+        <result column="NAME" property="name"/>
+        <result column="descript" property="descript"/>
+        <result column="state" property="state"/>
+    </resultMap>
+
+    <resultMap id="ProductMap" type="map">
+        <id column="id" property="id"/>
+        <result column="NAME" property="name"/>
+        <result column="descript" property="descript"/>
+        <result column="level" property="level"/>
+        <collection property="prices"     column="id" select="priceResult"></collection>
+        <collection property="productImages" column="id" select="imagePathResult"></collection>
+    </resultMap>
+
+    <select id="priceResult" resultType="map" parameterType="int">
+SELECT id,price
+FROM price WHERE product_id=#{id}
+</select>
+
+    <select id="imagePathResult" resultType="map" parameterType="int">
+SELECT id,path
+FROM product_image WHERE product_id=#{id}
+</select>
+
+    <resultMap id="ImageList" type="map">
+        <id property="id" column="id"/>
+        <collection property="productImages" column="id" select="imagePathResult"></collection>
+    </resultMap>
+
+    <select id="HotImageList" resultMap="ImageList">
+        SELECT id FROM product order by is_hot DESC  limit #{pageNum}, #{pageSize};
+</select>
+
+
+    <resultMap id="NewImageList" type="map">
+        <id column="id" property="id"/>
+        <result column="NAME" property="name"/>
+        <result column="descript" property="descript"/>
+        <collection property="productImages" column="id" select="imagePathResult"></collection>
+    </resultMap>
+    <select id="NewImageList" resultMap="NewImageList">
+        select id ,NAME,descript from product order by created DESC limit  #{pageNum}, #{pageSize};
+    </select>
+
+    <select id="selectAllProduct" parameterType="map" resultMap="ProductMap">
+        SELECT id,name,descript,level FROM product WHERE category_id =#{cid} limit  #{pageNum}, #{pageSize};
+    </select>
+    <!--find页mapper-->
+
+
+    <resultMap id="newResult" type="map">
+        <id column="id" property="id"/>
+        <result column="NAME" property="name"/>
+        <result column="descript" property="descript"/>
+        <collection property="productImages" column="id" select="imagePathResult"></collection>
+    </resultMap>
+
+    <select id="newProduct" resultMap="newResult" parameterType="map">
+        select * from product order by created DESC limit  #{pageNum}, #{pageSize};
+    </select>
+
+    <select id="hotProduct" resultMap="newResult" parameterType="map">
+        SELECT * FROM product order by is_hot DESC  limit #{pageNum}, #{pageSize};
+    </select>
+
+    <!--猜你喜欢-->
+
+    <resultMap id="productResult" type="com.xzy.pojo.Product">
+        <id property="id" column="id"/>
+        <result column="NAME" property="name"/>
+        <result column="descript" property="descript"/>
+        <result column="number" property="number"/>
+        <result column="buy_number" property="buyNumber"/>
+        <result column="is_hot" property="isHot"/>
+        <result column="created" property="created"/>
+        <result column="updated" property="updated"/>
+        <result column="category_id" property="categoryId"/>
+        <collection property="productImages"  column="id" select="imagePathResult"></collection>
+    </resultMap>
+
+    <select id="productIdResult" parameterType="int" resultType="com.xzy.pojo.Product">
+        SELECT *FROM product
+        where product.id=#{id}
+    </select>
+    <resultMap id="finalGusses" type="com.xzy.utils.finalGusses">
+        <result column="final_count" property="finalCount"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="NAME" property="name"/>
+        <collection property="imageList"  column="id" select="imagePathResult"></collection>
+    </resultMap>
+    <!--猜你喜欢-->
+    <select id="favouriteProduct" parameterType="map" resultMap="finalGusses" >
+        select distinct (final.count*0.5+final.buy_number*0.5) as final_count,final.id,final.category_id,final.NAME
+        from
+        (
+        select  distinct discuss_count.count,product.buy_number,product.id,product.category_id,product.NAME,product.descript,product_image.path
+        from
+        (select product_id ,count(*)as count
+        from product_discuss
+        group by product_id ) as discuss_count,product,product_discuss,product_image
+        where discuss_count.product_id=product.id
+        and product.category_id=#{id}
+        )
+        as final
+        order by final_count desc limit  #{pageNum}, #{pageSize};
+    </select>
+
+    <resultMap id="userCategoryResult" type="map">
+        <result column="category_id" property="id"/>
+    </resultMap>
+
+    <select id="userCategory"  parameterType="String" resultMap="userCategoryResult">
+           select distinct final.category_id from
+    (
+      select  res.product_id,product.id,product.category_id from
+        (
+       select  distinct user_history.user_id,user_history.product_id
+       from user_history
+       where  user_history.user_id=#{id}
+        )
+        as res,product
+        where res.product_id=product.id
+)as final;
+
+    </select>
+
+
+    <select id="FavouriteImageList" parameterType="map" resultMap="ImageList">
+        select distinct (final.count*0.5+final.buy_number*0.5) as final_count,final.id
+        from
+        (
+        select  distinct discuss_count.count,product.buy_number,product.id,product.category_id,product.descript,product_image.path
+        from
+        (select product_id ,count(*)as count
+        from product_discuss
+        group by product_id ) as discuss_count,product,product_discuss,product_image
+        where discuss_count.product_id=product.id
+        and product.category_id=#{id}
+        )
+        as final limit  #{pageNum}, #{pageSize};
+    </select>
+</mapper>
